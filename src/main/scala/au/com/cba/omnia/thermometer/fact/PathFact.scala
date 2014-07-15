@@ -80,18 +80,19 @@ object PathFactoids extends ThrownExpectations {
         def hasNext = iter.hasNext
         def next = iter.next()
       }
-      val subdirs = RemoteIter(system.listFiles(actualPath, true)).toList.filterNot(_.isDirectory()).map(p => {
-        val subdir = p.getPath().getParent().toString()
-        val actualRoot = actualPath.toUri().getPath()
-        val expectedRoot = expectedPath.toUri().getPath()
+
+      val actualRoot = actualPath.toUri.getPath
+      val expectedRoot = expectedPath.toUri.getPath
+      val subdirs = RemoteIter(system.listFiles(actualPath, true)).toList.filterNot(_.isDirectory).map(p => {
+        val subdir = p.getPath.getParent.toString
         val expectedSubdir = path(subdir.replace(actualRoot, expectedRoot))
         (subdir, expectedSubdir)
       }).toSet
+
       subdirs.map(dirs => {
         val (subdir, expectedSubdir) = dirs
         records[A](actualReader, expectedReader, expectedSubdir </> "*").run(context, subdir </> "*")
       }).reduce((a, b) => if (a.isFailure) a else b)
-      ok.toResult
     })
   }
 
