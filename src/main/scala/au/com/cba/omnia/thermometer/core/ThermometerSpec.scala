@@ -17,11 +17,15 @@ package core
 
 import java.io.File
 
+import cascading.pipe.Pipe
 import com.twitter.scalding.Job
 import com.twitter.scalding.TypedPipe
 
 import org.apache.commons.io.FileUtils
+
+import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
+
 import org.specs2._
 import org.specs2.execute._
 import org.specs2.matcher._
@@ -32,8 +36,7 @@ import scalaz.{Failure => _, _}, Scalaz._
 import au.com.cba.omnia.thermometer.context._
 import au.com.cba.omnia.thermometer.fact._
 import au.com.cba.omnia.thermometer.tools._
-
-import cascading.pipe.Pipe
+import au.com.cba.omnia.thermometer.core.Thermometer._
 
 abstract class ThermometerSpec extends Specification
     with TerminationMatchers
@@ -64,7 +67,7 @@ abstract class ThermometerSpec extends Specification
   }
   
   def withEnvironment(sourceEnv: Path)(test: => Result):Result = {
-    FileUtils.copyDirectory(new File(sourceEnv.toUri().getRawPath()), new File(dir))
+    FileSystem.get(conf).copyFromLocalFile(sourceEnv, dir </> "user")
     test
   }
   

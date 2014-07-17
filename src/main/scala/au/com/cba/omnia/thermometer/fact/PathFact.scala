@@ -69,30 +69,44 @@ object PathFactoids extends ThrownExpectations {
       if (actual.toSet == expected.toSet)
         ok.toResult
       else
-        failure(s"""Path <${actualPath}> exists but it contains records that don't match. Expected [${expected.mkString(", ")}], got [${actual.mkString(", ")}].""")
+        failure(s"""Path <${actualPath}> exists but it contains records that don't match. Expected [${expected.mkString(", ")}], got [${actual.mkString(", ")}]. Expected Path <${expectedPath}>""")
     })
   }
 
   def recordsByDirectory[A](actualReader: ThermometerRecordReader[A], expectedReader: ThermometerRecordReader[A], expectedPath: Path): PathFactoid = {
     PathFactoid((context, actualPath) => {
       val system: FileSystem = FileSystem.get(context.config)
+      
       case class RemoteIter[FileStatus](iter: RemoteIterator[FileStatus]) extends Iterator[FileStatus] {
         def hasNext = iter.hasNext
         def next = iter.next()
       }
-
-      val actualRoot = actualPath.toUri.getPath
-      val expectedRoot = expectedPath.toUri.getPath
-      val subdirs = RemoteIter(system.listFiles(actualPath, true)).toList.filterNot(_.isDirectory).map(p => {
-        val subdir = p.getPath.getParent.toString
-        val expectedSubdir = path(subdir.replace(actualRoot, expectedRoot))
-        (subdir, expectedSubdir)
-      }).toSet
-
-      subdirs.map(dirs => {
-        val (subdir, expectedSubdir) = dirs
-        records[A](actualReader, expectedReader, expectedSubdir </> "*").run(context, subdir </> "*")
-      }).reduce((a, b) => if (a.isFailure) a else b)
+      
+      def getRelativeSubdirs(p: Path) = {
+        val absoluteRoot = system.resolvePath(p).toString()
+        val pattern = s"${absoluteRoot}/(.*)".r
+        
+        RemoteIter(system.listFiles(p, true))
+          .filterNot(_.isDirectory)
+          .map(_.getPath.getParent().toString)
+          .map(s => s match {
+            case pattern(subdir) => subdir
+          })
+          .filter(_ != "")
+          .map(path(_)).toSet
+      }
+      val actualSubdirs = getRelativeSubdirs(actualPath)
+      val expectedSubdirs = getRelativeSubdirs(expectedPath)
+      
+      if (actualSubdirs != expectedSubdirs)
+        failure(s"""Actual output Paths <${actualSubdirs}> do not match expected output Paths ${expectedSubdirs}.""")
+      else if (actualSubdirs.size == 0) {
+        failure(s"""No subdirectories found beneath Path <${actualPath}>.""")
+      } else {
+        actualSubdirs.map(subdir => {
+          records[A](actualReader, expectedReader, expectedPath </> subdir </> "*").run(context, actualPath </> subdir </> "*")
+        }).reduce((a, b) => if (a.isFailure) a else b)
+      }
     })
   }
 

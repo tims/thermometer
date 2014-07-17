@@ -16,8 +16,12 @@ package au.com.cba.omnia.thermometer.example
 
 import com.twitter.scalding._
 
+import scalaz.effect.IO
+
 import au.com.cba.omnia.thermometer.core._
 import au.com.cba.omnia.thermometer.core.Thermometer._
+import au.com.cba.omnia.thermometer.context.Context
+import au.com.cba.omnia.thermometer.fact.PathFactoids._
 
 class TypedPsvSpec extends ThermometerSpec { def is = s2"""
 
@@ -51,7 +55,6 @@ Demonstration of ThermometerSpec
         t.lines("cars" </> "part-*") must contain(allOf(data.map(_.toPSV):_*))
       })
 
-  import au.com.cba.omnia.thermometer.fact.PathFactoids._
 
   def facts =
     pipeline
