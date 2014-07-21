@@ -15,10 +15,10 @@
 package au.com.cba.omnia.thermometer
 package tools
 
-import cascading.flow.FlowDef
 import com.twitter.scalding._
 import scala.util.control.NonFatal
 import scalaz._, Scalaz._
+import org.apache.hadoop.fs.FileSystem
 
 object Jobs {
   /** Run the specified job, returns an optional error state (None indicates success). */
@@ -36,6 +36,8 @@ object Jobs {
         Some(s"Job failed to run <${j.name}>".left)
     } catch {
       case NonFatal(e) => Some(e.right)
+    } finally {
+      FileSystem.closeAll()
     }
 
     start(job, 0)
