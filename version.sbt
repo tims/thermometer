@@ -12,8 +12,8 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 
-version in ThisBuild := "0.3.2"
+version in ThisBuild := "0.3.2-CDH5"
 
-uniqueVersionSettings
+//uniqueVersionSettings
 
 licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
